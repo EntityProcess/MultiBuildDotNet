@@ -1,0 +1,8 @@
+{
+  "CommandTemplate": "dotnet build {solution}",
+  "Solutions": [
+    "path/to/solution1.sln",
+    "path/to/solution2.sln",
+    "path/to/solution3.sln"
+  ]
+}
