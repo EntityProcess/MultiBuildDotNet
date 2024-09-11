@@ -365,4 +365,4 @@ FodyWeavers.xsd
 # Project
 /GitContentSearch/Properties/launchSettings.json
 /MultiBuildDotNet/config.json
-/MultiBuildDotNet/solutions.json
+/MultiBuildDotNet/masterBuildOrder.json
