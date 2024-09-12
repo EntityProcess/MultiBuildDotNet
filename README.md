@@ -8,7 +8,6 @@
 - Build multiple .NET solutions in a specified order.
 - Supports customizable build commands using placeholders for solution paths.
 - Reads a master build order file to ensure the correct order of solutions.
-- Solutions not found in the master build order will be built after the reordered ones.
 
 ## Installation
 
@@ -33,31 +32,31 @@
    ```json
    {
      "CommandTemplate": "dotnet build {solution}",
+     "WorkingDirectory": "C:/path/to/your/repo",
      "Solutions": [
-       "path/to/solution1.sln",
-       "path/to/solution2.sln",
-       "path/to/solution3.sln"
+       "C:/Projects/Solution1.sln",
+       "C:/Projects/Solution2.sln"
      ]
    }
    ```
 
    - Replace `"dotnet build {solution}"` with the desired command.
    - Use `{solution}` as the placeholder for each solution's path, which will be replaced by the entries in the `Solutions` array.
+   - Paths containing backslashes (`\`) in `Solutions` will be converted to forward slashes (`/`).
 
-2. Create a `masterBuildOrder.json` file in the project directory. This file contains the solutions in the order they should be built:
+2. Optionally, create a `masterBuildOrder.json` file in the project directory. This file contains the solutions in the order they should be built:
 
    Example `masterBuildOrder.json`:
    ```json
    {
      "Solutions": [
-       "path/to/solution1.sln",
-       "path/to/solution2.sln",
-       "path/to/solution3.sln"
+       "C:/Projects/Solution1.sln",
+       "C:/Projects/Solution2.sln"
      ]
    }
    ```
 
-   The app will reorder the solutions from `config.json` based on the master build order specified in `masterBuildOrder.json`. Solutions in `config.json` that are not found in the master build order will be appended in their original order.
+   If `masterBuildOrder.json` exists, the app will reorder the solutions from `config.json` based on the master build order specified in `masterBuildOrder.json`. Solutions in `config.json` that are not found in the master build order will be appended in their original order.
 
 3. Run the app:
 
@@ -70,19 +69,19 @@
 ## Example Output
 
 ```
-Running command: dotnet build path/to/solution1.sln
+Running command: dotnet build C:/Projects/Solution1.sln
 Microsoft (R) Build Engine version 16.9.0+57a23d249 for .NET
 ...
 
-Running command: dotnet build path/to/solution2.sln
+Running command: dotnet build C:/Projects/Solution2.sln
 Microsoft (R) Build Engine version 16.9.0+57a23d249 for .NET
 ...
-Build failed for solution: path/to/solution2.sln
+Build failed for solution: C:/Projects/Solution2.sln
 ```
 
 ## Configuration File
 
-- `config.json`: Contains the command template and list of solution paths.
+- `config.json`: Contains the command template, working directory, and list of solution paths.
 - `masterBuildOrder.json`: Contains the solutions in the order they should be built.
 
 ### Example `config.json`:
@@ -90,6 +89,7 @@ Build failed for solution: path/to/solution2.sln
 ```json
 {
   "CommandTemplate": "dotnet build {solution}",
+  "WorkingDirectory": "C:/path/to/your/repo",
   "Solutions": [
     "C:/Projects/Solution1.sln",
     "C:/Projects/Solution2.sln"
