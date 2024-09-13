@@ -62,12 +62,12 @@
 
    Example usage with commit hashes:
    ```bash
-   dotnet run <commit1> <commit2>
+   MultiBuildDotNet.exe <commit1> <commit2>
    ```
 
    Example:
    ```bash
-   dotnet run abc123 def456
+   MultiBuildDotNet.exe abc123 def456
    ```
 
    If no commit arguments are provided, the app will use the existing solutions from `config.json`.
@@ -75,7 +75,7 @@
 4. Run the app:
 
    ```bash
-   dotnet run
+   MultiBuildDotNet.exe
    ```
 
    The app will execute the command for each solution sequentially. If a command fails, the process will stop, and the name of the failed solution will be displayed.
