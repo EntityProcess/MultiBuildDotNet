@@ -33,19 +33,26 @@ class Program
             Console.WriteLine($"Finding solutions with changes between commits: {commit1} and {commit2} in {solutionConfig.WorkingDirectory}");
 
             // Use SolutionFinderLib to get the list of solutions with changes between the two commits
-            solutions = SolutionFinder.GetSolutionsWithChanges(commit1, commit2, solutionConfig.WorkingDirectory).Select(s => s.Replace("\\", "/")).ToList();
+            var changedSolutions = SolutionFinder.GetSolutionsWithChanges(commit1, commit2, solutionConfig.WorkingDirectory)
+                                                 .Select(s => s.Replace("\\", "/")).ToList();
 
-            if (solutions.Count == 0)
+            if (changedSolutions.Count == 0)
             {
                 Console.WriteLine("No solutions contain changed files between the specified commits.");
-                return;
+            }
+            else
+            {
+                Console.WriteLine("Solutions containing changed files:");
+                foreach (var solution in changedSolutions)
+                {
+                    Console.WriteLine(solution);
+                }
             }
 
-            Console.WriteLine("Solutions containing changed files:");
-            foreach (var solution in solutions)
-            {
-                Console.WriteLine(solution);
-            }
+            // Add solutions from config.json that are not in the changedSolutions
+            var forcedSolutions = solutionConfig.Solutions.Except(changedSolutions).ToList();
+            solutions.AddRange(changedSolutions);
+            solutions.AddRange(forcedSolutions);
         }
 
         // Use existing solutions from config.json if no commit arguments were provided
