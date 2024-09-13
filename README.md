@@ -111,6 +111,10 @@ Build failed for solution: C:/Projects/Solution2.sln
 }
 ```
 
+## Requirements
+
+- .NET SDK (8.0 or later)
+
 ### Example `masterBuildOrder.json`:
 
 ```json
@@ -121,12 +125,6 @@ Build failed for solution: C:/Projects/Solution2.sln
   ]
 }
 ```
-
-## Requirements
-
-- .NET SDK (5.0 or later)
-- Visual Studio (if using `devenv.com` command)
-- Command-line access
 
 ## License
 
