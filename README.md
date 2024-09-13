@@ -14,7 +14,7 @@
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/MultiBuildDotNet.git
+   git clone https://github.com/EntityProcess/MultiBuildDotNet.git
    cd MultiBuildDotNet
    ```
 
