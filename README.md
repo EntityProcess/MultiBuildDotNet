@@ -1,7 +1,7 @@
 
 # MultiBuildDotNet
 
-**MultiBuildDotNet** is a .NET console app designed to sequentially build multiple `.NET` solutions based on a configuration file. The app allows users to specify custom commands (e.g., `dotnet build` or `devenv.com`) to run for each solution and substitutes the solution paths dynamically. It also reads a master build order config file to ensure that solutions are built in the correct order.
+**MultiBuildDotNet** is a .NET console app designed to sequentially build multiple `.NET` solutions based on a configuration file. The app allows users to specify custom commands (e.g., `dotnet build`) to run for each solution and substitutes the solution paths dynamically. It also reads a master build order config file to ensure that solutions are built in the correct order.
 
 ## Features
 
@@ -58,7 +58,21 @@
 
    If `masterBuildOrder.json` exists, the app will reorder the solutions from `config.json` based on the master build order specified in `masterBuildOrder.json`. Solutions in `config.json` that are not found in the master build order will be appended in their original order.
 
-3. Run the app:
+3. You can specify two Git commits to find solutions that contain changes between those commits. The app will use the changed solutions between the specified commits, but any solutions in `config.json` that do not appear in the list of changed solutions will also be included in the build process.
+
+   Example usage with commit hashes:
+   ```bash
+   dotnet run <commit1> <commit2>
+   ```
+
+   Example:
+   ```bash
+   dotnet run abc123 def456
+   ```
+
+   If no commit arguments are provided, the app will use the existing solutions from `config.json`.
+
+4. Run the app:
 
    ```bash
    dotnet run
