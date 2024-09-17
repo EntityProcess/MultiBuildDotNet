@@ -58,7 +58,15 @@
 
    If `masterBuildOrder.json` exists, the app will reorder the solutions from `config.json` based on the master build order specified in `masterBuildOrder.json`. Solutions in `config.json` that are not found in the master build order will be appended in their original order.
 
-3. You can specify two Git commits to find solutions that contain changes between those commits. The app will use the changed solutions between the specified commits, but any solutions in `config.json` that do not appear in the list of changed solutions will also be included in the build process.
+3. Run the app:
+
+   ```bash
+   MultiBuildDotNet.exe
+   ```
+
+   The app will execute the command for each solution sequentially. If a command fails, the process will stop, and the name of the failed solution will be displayed.
+
+4. You can specify two Git commits to find solutions that contain changes between those commits. The app will use the changed solutions between the specified commits, but any solutions in `config.json` that do not appear in the list of changed solutions will also be included in the build process.
 
    Example usage with commit hashes:
    ```bash
@@ -71,14 +79,6 @@
    ```
 
    If no commit arguments are provided, the app will use the existing solutions from `config.json`.
-
-4. Run the app:
-
-   ```bash
-   MultiBuildDotNet.exe
-   ```
-
-   The app will execute the command for each solution sequentially. If a command fails, the process will stop, and the name of the failed solution will be displayed.
 
 ## Example Output
 
