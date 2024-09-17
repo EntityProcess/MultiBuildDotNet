@@ -25,24 +25,29 @@ namespace SolutionFinderLib
                 return new List<string>(); // No files changed
             }
 
-            // Get all .sln files in the specified working directory
-            List<string> solutionFiles = Directory.GetFiles(workingDirectory, "*.sln", SearchOption.AllDirectories).ToList();
-
-            // Find and list solution files containing changed files
+            // Find solutions containing changes
             HashSet<string> solutionsContainingChanges = new HashSet<string>();
 
-            foreach (var solutionFile in solutionFiles)
+            foreach (var changedFile in changedFiles)
             {
-                string solutionDirectory = Path.GetDirectoryName(solutionFile) ?? string.Empty;
+                string changedFileFullPath = Path.GetFullPath(Path.Combine(workingDirectory, changedFile));
+                string currentDirectory = Path.GetDirectoryName(changedFileFullPath) ?? string.Empty;
 
-                foreach (var changedFile in changedFiles)
+                // Traverse up the directory tree to find the first .sln file
+                while (!string.IsNullOrEmpty(currentDirectory))
                 {
-                    string changedFileFullPath = Path.GetFullPath(Path.Combine(workingDirectory, changedFile));
-                    if (changedFileFullPath.StartsWith(solutionDirectory))
+                    // Check if there's a .sln file in the current directory
+                    var solutionFiles = Directory.GetFiles(currentDirectory, "*.sln", SearchOption.TopDirectoryOnly);
+
+                    if (solutionFiles.Length > 0)
                     {
-                        solutionsContainingChanges.Add(solutionFile);
-                        break; // If one file matches, no need to check further files for this solution
+                        // Add the first solution found and stop searching for this changed file
+                        solutionsContainingChanges.Add(solutionFiles.First());
+                        break;
                     }
+
+                    // Move up to the parent directory
+                    currentDirectory = Directory.GetParent(currentDirectory)?.FullName ?? string.Empty;
                 }
             }
 

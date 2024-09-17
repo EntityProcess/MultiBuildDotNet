@@ -1,5 +1,5 @@
 {
-  "CommandTemplate": "dotnet build {solution}",
+  "CommandTemplate": "dotnet build \"{solution}\"",
   "WorkingDirectory": "path/to/repository",
   "Solutions": [
     "path/to/solution1.sln",

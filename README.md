@@ -21,7 +21,7 @@
 2. Build the console app:
 
    ```bash
-   dotnet build
+   dotnet publish -c Release
    ```
 
 ## Usage

@@ -1,5 +1,6 @@
 ﻿using SolutionFinderLib;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 
 class Program
@@ -8,6 +9,23 @@ class Program
     {
         string configFilePath = "config.json"; // Path to your JSON config file
         string masterBuildOrderFilePath = "masterBuildOrder.json"; // Path to master build order config
+
+        // Check if the config.json file exists in the current directory
+        if (!File.Exists(configFilePath))
+        {
+            // Try loading the config.json from the directory where the executable is running
+            string executableDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
+            configFilePath = Path.Combine(executableDirectory, "config.json");
+
+            if (!File.Exists(configFilePath))
+            {
+                Console.WriteLine($"Error: config.json file not found at the default location or executable directory.");
+                return;
+            }
+        }
+
+        // Output the path of the config.json being used
+        Console.WriteLine($"Using config.json from path: {configFilePath}");
 
         List<string> solutions = new List<string>();
 
@@ -45,7 +63,7 @@ class Program
                 Console.WriteLine("Solutions containing changed files:");
                 foreach (var solution in changedSolutions)
                 {
-                    Console.WriteLine(solution);
+                    Console.WriteLine("- " + solution);
                 }
             }
 
@@ -53,6 +71,25 @@ class Program
             var forcedSolutions = solutionConfig.Solutions.Except(changedSolutions).ToList();
             solutions.AddRange(changedSolutions);
             solutions.AddRange(forcedSolutions);
+
+            // Output the additional solutions that were added from config.json
+            if (forcedSolutions.Count > 0)
+            {
+                Console.WriteLine("Additional solutions added from config.json:");
+                foreach (var solution in forcedSolutions)
+                {
+                    Console.WriteLine("- " + solution);
+                }
+            }
+
+            // Ask the user if they want to start the build
+            Console.WriteLine("Do you want to start the build? (y/n):");
+            var response = Console.ReadLine();
+            if (response?.ToLower() != "y")
+            {
+                Console.WriteLine("Build process aborted.");
+                return;
+            }
         }
 
         // Use existing solutions from config.json if no commit arguments were provided
