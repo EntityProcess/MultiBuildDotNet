@@ -31,7 +31,7 @@
    Example `config.json`:
    ```json
    {
-     "CommandTemplate": "dotnet build {solution}",
+     "CommandTemplate": "dotnet build \"{solution}\"",
      "WorkingDirectory": "C:/path/to/your/repo",
      "Solutions": [
        "C:/Projects/Solution1.sln",
