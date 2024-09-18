@@ -7,41 +7,63 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        // Try loading the config.json from the directory where the executable is running
-        string executableDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var configFilePath = Path.Combine(executableDirectory, "config.json");
-        var masterBuildOrderFilePath = Path.Combine(executableDirectory, "masterBuildOrder.json"); // Path to master build order config
-        var currentBranch = GetCurrentBranch(); // Get current branch
-
-        // Parse arguments
-        if (args.Length >= 2 && (args[0] == "-b" || args[0] == "--branch"))
+        try
         {
-            // Compare the latest commit in the current branch with the latest commit in the specified branch
-            string? branchToCompare = args[1];
-            string currentBranchLatestCommit = GetLatestCommit(currentBranch);
-            string compareBranchLatestCommit = GetLatestCommit(branchToCompare);
+            // Try loading the config.json from the directory where the executable is running
+            var executableDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
+            var configFilePath = Path.Combine(executableDirectory, "config.json");
+            var masterBuildOrderFilePath = Path.Combine(executableDirectory, "masterBuildOrder.json"); // Path to master build order config
+            var currentBranch = GetCurrentBranch(); // Get current branch
 
-            Console.WriteLine($"Comparing latest commit in current branch ({currentBranch}): {currentBranchLatestCommit} " +
-                              $"with latest commit in branch ({branchToCompare}): {compareBranchLatestCommit}");
+            // Parse arguments
+            if (args.Length >= 2 && (args[0] == "-b" || args[0] == "--branch"))
+            {
+                // Compare the latest commit in the current branch with the latest commit in the specified branch
+                var branchToCompare = args[1];
+                var currentBranchLatestCommit = GetLatestCommit(currentBranch);
+                var compareBranchLatestCommit = GetLatestCommit(branchToCompare);
 
-            // Call the existing logic using the two commit hashes
-            await FindAndBuildSolutions(currentBranchLatestCommit, compareBranchLatestCommit, configFilePath, masterBuildOrderFilePath);
+                Console.WriteLine($"Comparing latest commit in current branch ({currentBranch}): {currentBranchLatestCommit} " +
+                                  $"with latest commit in branch ({branchToCompare}): {compareBranchLatestCommit}");
+
+                // Call the existing logic using the two commit hashes
+                await FindAndBuildSolutions(currentBranchLatestCommit, compareBranchLatestCommit, configFilePath, masterBuildOrderFilePath);
+            }
+            else if (args.Length == 2)
+            {
+                // Compare two specific commits as before
+                var commit1 = args[0];
+                var commit2 = args[1];
+
+                Console.WriteLine($"Finding solutions with changes between commits: {commit1} and {commit2}");
+
+                await FindAndBuildSolutions(commit1, commit2, configFilePath, masterBuildOrderFilePath);
+            }
+            else
+            {
+                Console.WriteLine("Usage:");
+                Console.WriteLine(" - To compare the latest commits in the current branch and another branch: -b <branch>");
+                Console.WriteLine(" - To compare two specific commits: <commit1> <commit2>");
+                return;
+            }
         }
-        else if (args.Length == 2)
+        catch (FileNotFoundException ex)
         {
-            // Compare two specific commits as before
-            string commit1 = args[0];
-            string commit2 = args[1];
-
-            Console.WriteLine($"Finding solutions with changes between commits: {commit1} and {commit2}");
-
-            await FindAndBuildSolutions(commit1, commit2, configFilePath, masterBuildOrderFilePath);
+            // Graceful handling of missing config or master build order file
+            Console.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine("Please ensure that the necessary files (e.g., config.json, masterBuildOrder.json) exist in the application directory.");
+            return;
         }
-        else
+        catch (InvalidOperationException ex)
         {
-            Console.WriteLine("Usage:");
-            Console.WriteLine(" - To compare the latest commits in the current branch and another branch: -b <branch>");
-            Console.WriteLine(" - To compare two specific commits: <commit1> <commit2>");
+            // Handle deserialization or other runtime errors gracefully
+            Console.WriteLine($"Error: {ex.Message}");
+            return;
+        }
+        catch (Exception ex)
+        {
+            // Generic catch for any other unexpected errors
+            Console.WriteLine($"An unexpected error occurred: {ex.Message}");
             return;
         }
     }
@@ -56,8 +78,6 @@ class Program
             Console.WriteLine("Invalid config.json file.");
             return;
         }
-
-        var solutions = new List<string>();
 
         var changedSolutions = SolutionFinder.GetSolutionsWithChanges(commit1, commit2, solutionConfig.WorkingDirectory)
                                              .Select(s => s.Replace("\\", "/")).ToList();
@@ -76,8 +96,7 @@ class Program
 
         // Add solutions from config.json that are not in the changedSolutions
         var forcedSolutions = solutionConfig.Solutions.Except(changedSolutions).ToList();
-        solutions.AddRange(changedSolutions);
-        solutions.AddRange(forcedSolutions);
+        changedSolutions.AddRange(forcedSolutions);
 
         // Output the additional solutions that were added from config.json
         if (forcedSolutions.Count > 0)
@@ -99,7 +118,7 @@ class Program
         }
 
         var masterBuildOrder = await LoadMasterBuildOrder(masterBuildOrderFilePath);
-        await BuildSolutions(solutions, solutionConfig, masterBuildOrder);
+        await BuildSolutions(changedSolutions, solutionConfig, masterBuildOrder);
     }
 
     static string GetLatestCommit(string branch)
@@ -118,7 +137,7 @@ class Program
         };
 
         process.Start();
-        string latestCommit = process.StandardOutput.ReadToEnd().Trim();
+        var latestCommit = process.StandardOutput.ReadToEnd().Trim();
         process.WaitForExit();
 
         if (string.IsNullOrEmpty(latestCommit))
@@ -145,7 +164,7 @@ class Program
         };
 
         process.Start();
-        string currentBranch = process.StandardOutput.ReadToEnd().Trim();
+        var currentBranch = process.StandardOutput.ReadToEnd().Trim();
         process.WaitForExit();
 
         if (string.IsNullOrEmpty(currentBranch))
@@ -187,7 +206,7 @@ class Program
 
     static async Task BuildSolutions(List<string> solutions, SolutionConfig solutionConfig, MasterBuildOrder masterBuildOrder)
     {
-        if (masterBuildOrder != null && masterBuildOrder.Solutions != null && masterBuildOrder.Solutions.Count > 0)
+        if (masterBuildOrder.Solutions != null && masterBuildOrder.Solutions.Count > 0)
         {
             // Ensure paths in masterBuildOrder also have forward slashes
             masterBuildOrder.Solutions = masterBuildOrder.Solutions.Select(s => s.Replace("\\", "/")).ToList();
@@ -271,6 +290,12 @@ class Program
             process.BeginErrorReadLine();
 
             await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                Console.WriteLine("Build failed for command: " + command);
+            }
+
             return process.ExitCode == 0;
         }
     }
