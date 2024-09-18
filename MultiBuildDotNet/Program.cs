@@ -9,38 +9,50 @@ class Program
     {
         try
         {
-            // Try loading the config.json from the directory where the executable is running
+            // Get the current directory and construct paths for config and master build order files
             var executableDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             var configFilePath = Path.Combine(executableDirectory, "config.json");
-            var masterBuildOrderFilePath = Path.Combine(executableDirectory, "masterBuildOrder.json"); // Path to master build order config
-            var currentBranch = GetCurrentBranch(); // Get current branch
+            var masterBuildOrderFilePath = Path.Combine(executableDirectory, "masterBuildOrder.json");
 
-            // Parse arguments
+            // Load config.json
+            var solutionConfig = await LoadConfigFile(configFilePath);
+
+            // Handle branch comparison or commit comparison
             if (args.Length >= 2 && (args[0] == "-b" || args[0] == "--branch"))
             {
                 // Compare the latest commit in the current branch with the latest commit in the specified branch
                 var branchToCompare = args[1];
+                var currentBranch = GetCurrentBranch();
                 var currentBranchLatestCommit = GetLatestCommit(currentBranch);
                 var compareBranchLatestCommit = GetLatestCommit(branchToCompare);
+                var latestCommonCommit = GetLatestCommonCommit(currentBranch, branchToCompare);
 
                 Console.WriteLine($"Comparing latest commit in current branch ({currentBranch}): {currentBranchLatestCommit} " +
                                   $"with latest commit in branch ({branchToCompare}): {compareBranchLatestCommit}");
+                Console.WriteLine($"Latest common commit between {currentBranch} and {branchToCompare}: {latestCommonCommit}");
 
-                // Call the existing logic using the two commit hashes
+                // Compare the latest master commit with the latest common commit
+                if (IsMasterMoreRecent(compareBranchLatestCommit, latestCommonCommit))
+                {
+                    Console.WriteLine($"Error: The latest commit in branch ({branchToCompare}) is more recent than the latest common commit ({latestCommonCommit}) in your current branch ({currentBranch}).");
+                    Console.WriteLine("Please merge the latest changes from the master branch into your branch before proceeding.");
+                    return;
+                }
+
                 await FindAndBuildSolutions(currentBranchLatestCommit, compareBranchLatestCommit, configFilePath, masterBuildOrderFilePath);
             }
             else if (args.Length == 2)
             {
-                // Compare two specific commits as before
+                // Compare two specific commits
                 var commit1 = args[0];
                 var commit2 = args[1];
-
                 Console.WriteLine($"Finding solutions with changes between commits: {commit1} and {commit2}");
 
                 await FindAndBuildSolutions(commit1, commit2, configFilePath, masterBuildOrderFilePath);
             }
             else
             {
+                // Show usage instructions
                 Console.WriteLine("Usage:");
                 Console.WriteLine(" - To compare the latest commits in the current branch and another branch: -b <branch>");
                 Console.WriteLine(" - To compare two specific commits: <commit1> <commit2>");
@@ -146,6 +158,54 @@ class Program
         }
 
         return latestCommit;
+    }
+
+    static bool IsMasterMoreRecent(string masterCommit, string commonCommit)
+    {
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = $"log {commonCommit}..{masterCommit} --oneline",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        string logOutput = process.StandardOutput.ReadToEnd().Trim();
+        process.WaitForExit();
+
+        // If git log shows any commits, it means master is more recent
+        return !string.IsNullOrEmpty(logOutput);
+    }
+
+    static string GetLatestCommonCommit(string branch1, string branch2)
+    {
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = $"merge-base {branch1} {branch2}",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        string commonCommit = process.StandardOutput.ReadToEnd().Trim();
+        process.WaitForExit();
+
+        if (string.IsNullOrEmpty(commonCommit))
+        {
+            throw new InvalidOperationException($"Could not find the latest common commit between {branch1} and {branch2}");
+        }
+
+        return commonCommit;
     }
 
     static string GetCurrentBranch()
