@@ -8,6 +8,7 @@
 - Build multiple .NET solutions in a specified order.
 - Supports customizable build commands using placeholders for solution paths.
 - Reads a master build order file to ensure the correct order of solutions.
+- Compare the latest commits in the current branch and another branch (e.g., `master`) to find solutions that need rebuilding.
 
 ## Installation
 
@@ -79,6 +80,13 @@
    ```
 
    If no commit arguments are provided, the app will use the existing solutions from `config.json`.
+
+5. You can compare the latest commit in the current branch with the latest commit in another branch (e.g., master). The app will rebuild solutions that have changes between these commits.
+
+   Example usage with branch comparison:
+   ```bash
+   MultiBuildDotNet.exe -b master
+   ```
 
 ## Example Output
 
